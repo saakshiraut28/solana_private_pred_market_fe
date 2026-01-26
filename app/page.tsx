@@ -1,65 +1,187 @@
-import Image from "next/image";
+/** @format */
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import WalletConnect from "@/components/wallet-connect";
+import MarketList from "@/components/market-list";
+import CreateMarketModal from "@/components/create-market-modal";
+import TradeModal from "@/components/trade-modal";
+import type { Market } from "@/types";
 
 export default function Home() {
+  const [connected, setConnected] = useState(false);
+  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [showTradeModal, setShowTradeModal] = useState(false);
+
+  // Mock data for initial markets
+  useEffect(() => {
+    setMarkets([
+      {
+        id: "1",
+        title: "Will BTC exceed $100k by Q2 2025?",
+        description: "Bitcoin price prediction",
+        yesPrice: 0.65,
+        noPrice: 0.35,
+        totalVolume: 150000,
+        liquidity: 25000,
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+        creator: "Creator1",
+      },
+      {
+        id: "2",
+        title: "Will SOL reach $50 by end of 2025?",
+        description: "Solana price prediction",
+        yesPrice: 0.58,
+        noPrice: 0.42,
+        totalVolume: 89000,
+        liquidity: 18000,
+        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+        creator: "Creator2",
+      },
+      {
+        id: "3",
+        title: "Will Ethereum 2.0 staking rewards exceed 5%?",
+        description: "ETH staking prediction",
+        yesPrice: 0.72,
+        noPrice: 0.28,
+        totalVolume: 210000,
+        liquidity: 42000,
+        expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+        creator: "Creator3",
+      },
+    ]);
+  }, []);
+
+  const handleWalletConnect = (pubKey: string) => {
+    setPublicKey(pubKey);
+    setConnected(true);
+  };
+
+  const handleCreateMarket = (marketData: Omit<Market, "id">) => {
+    const newMarket: Market = {
+      ...marketData,
+      id: String(markets.length + 1),
+    };
+    setMarkets([...markets, newMarket]);
+    setShowCreateModal(false);
+  };
+
+  const handleTrade = (
+    marketId: string,
+    side: "yes" | "no",
+    amount: number,
+  ) => {
+    const updatedMarkets = markets.map((m) => {
+      if (m.id === marketId) {
+        // Simple mock: adjust prices based on trade
+        const adjustment = amount / 100000;
+        if (side === "yes") {
+          return {
+            ...m,
+            yesPrice: Math.min(0.99, m.yesPrice + adjustment),
+            noPrice: Math.max(0.01, m.noPrice - adjustment),
+          };
+        } else {
+          return {
+            ...m,
+            yesPrice: Math.max(0.01, m.yesPrice - adjustment),
+            noPrice: Math.min(0.99, m.noPrice + adjustment),
+          };
+        }
+      }
+      return m;
+    });
+    setMarkets(updatedMarkets);
+    setShowTradeModal(false);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">
+                Ω
+              </span>
+            </div>
+            <h1 className="text-xl font-bold text-foreground">PredictMarket</h1>
+          </div>
+          <WalletConnect
+            connected={connected}
+            publicKey={publicKey}
+            onConnect={handleWalletConnect}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {!connected ? (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+            <Card className="p-12 text-center max-w-md">
+              <h2 className="text-2xl font-bold mb-2">Connect Your Wallet</h2>
+              <p className="text-muted-foreground mb-6">
+                Connect your Solana wallet to start predicting and trading
+              </p>
+              <WalletConnect
+                connected={connected}
+                publicKey={publicKey}
+                onConnect={handleWalletConnect}
+              />
+            </Card>
+          </div>
+        ) : (
+          <>
+            {/* Controls */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <Input placeholder="Search markets..." className="flex-1" />
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="md:w-auto"
+              >
+                Create Market
+              </Button>
+            </div>
+
+            {/* Markets Grid */}
+            <MarketList
+              markets={markets}
+              onSelectMarket={(market) => {
+                setSelectedMarket(market);
+                setShowTradeModal(true);
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          </>
+        )}
       </main>
+
+      {/* Modals */}
+      {showCreateModal && (
+        <CreateMarketModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreateMarket}
+        />
+      )}
+
+      {selectedMarket && showTradeModal && (
+        <TradeModal
+          market={selectedMarket}
+          onClose={() => {
+            setShowTradeModal(false);
+            setSelectedMarket(null);
+          }}
+          onTrade={handleTrade}
+        />
+      )}
     </div>
   );
 }
