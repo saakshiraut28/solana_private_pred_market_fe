@@ -11,6 +11,10 @@ import { Card } from "@/components/ui/card";
 import { X } from "lucide-react";
 import type { Market } from "@/types";
 
+import { usePredictionMarket } from "@/hooks/usePredictionMarket";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { BN } from "@coral-xyz/anchor";
+
 interface CreateMarketModalProps {
   onClose: () => void;
   onCreate: (market: Omit<Market, "id">) => void;
@@ -24,14 +28,31 @@ export default function CreateMarketModal({
   const [description, setDescription] = useState("");
   const [daysToExpire, setDaysToExpire] = useState("30");
   const [initialLiquidity, setInitialLiquidity] = useState("");
+  const { publicKey, connected } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
+  const { createMarket } = usePredictionMarket();
+
+  const handleCreateMarket = async () => {
+    const question = title;
+    const liquidity = Number(initialLiquidity) || 10000;
+    const endTime = Date.now() + Number(daysToExpire) * 24 * 60 * 60 * 1000;
+    await createMarket(question, new BN(liquidity), new BN(endTime));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    if (!connected || !publicKey) {
+      setIsLoading(false);
+      alert("Please connect your wallet.");
+      return;
+    }
+
     try {
-      const newMarket: Omit<Market, "id"> = {
+      await handleCreateMarket();
+
+      onCreate({
         title,
         description,
         yesPrice: 0.5,
@@ -41,10 +62,8 @@ export default function CreateMarketModal({
         expiresAt: new Date(
           Date.now() + Number(daysToExpire) * 24 * 60 * 60 * 1000,
         ),
-        creator: "user", // Replace with actual user pubkey
-      };
-
-      onCreate(newMarket);
+        creator: publicKey?.toString() || "", // Replace with actual user pubkey
+      });
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +79,7 @@ export default function CreateMarketModal({
         >
           <h2 className="text-xl font-bold">Create Market</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-1 hover:bg-muted rounded-lg transition-colors"
           >

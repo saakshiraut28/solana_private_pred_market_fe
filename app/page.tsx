@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,16 +14,16 @@ import {
   WalletModalProvider,
   WalletMultiButton,
 } from "@solana/wallet-adapter-react-ui";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { usePredictionMarket } from "@/hooks/usePredictionMarket";
 
 export default function Home() {
-  const [connected, setConnected] = useState(false);
-  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const { publicKey, connected } = useWallet();
   const [markets, setMarkets] = useState<Market[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
 
-  // Mock data for initial markets
   useEffect(() => {
     setMarkets([
       {
@@ -62,19 +62,16 @@ export default function Home() {
     ]);
   }, []);
 
-  const handleWalletConnect = (pubKey: string) => {
-    setPublicKey(pubKey);
-    setConnected(true);
-  };
-
-  const handleCreateMarket = (marketData: Omit<Market, "id">) => {
-    const newMarket: Market = {
-      ...marketData,
-      id: String(markets.length + 1),
+  const handleCreateMarket = (newMarket: Omit<Market, "id">) => {
+    const marketWithId: Market = {
+      id: crypto.randomUUID(), // temp frontend id
+      ...newMarket,
     };
-    setMarkets([...markets, newMarket]);
+
+    setMarkets((prev) => [marketWithId, ...prev]);
     setShowCreateModal(false);
   };
+
 
   const handleTrade = (
     marketId: string,
@@ -83,7 +80,6 @@ export default function Home() {
   ) => {
     const updatedMarkets = markets.map((m) => {
       if (m.id === marketId) {
-        // Simple mock: adjust prices based on trade
         const adjustment = amount / 100000;
         if (side === "yes") {
           return {
