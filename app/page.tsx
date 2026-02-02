@@ -10,12 +10,8 @@ import MarketList from "@/components/market-list";
 import CreateMarketModal from "@/components/create-market-modal";
 import TradeModal from "@/components/trade-modal";
 import type { Market } from "@/types";
-import {
-  WalletModalProvider,
-  WalletMultiButton,
-} from "@solana/wallet-adapter-react-ui";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { usePredictionMarket } from "@/hooks/usePredictionMarket";
 
 export default function Home() {
   const { publicKey, connected } = useWallet();
@@ -72,7 +68,6 @@ export default function Home() {
     setShowCreateModal(false);
   };
 
-
   const handleTrade = (
     marketId: string,
     side: "yes" | "no",
@@ -109,7 +104,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">
-                Ω
+                P
               </span>
             </div>
             <h1 className="text-xl font-bold text-foreground">PredictMarket</h1>

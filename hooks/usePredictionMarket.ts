@@ -17,5 +17,5 @@ export function usePredictionMarket() {
         return tx;
     }
 
-    return { createMarket };
+    return { createMarket, placeBet };
 }

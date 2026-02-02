@@ -11,6 +11,8 @@ import { Card } from "@/components/ui/card";
 import { X, TrendingUp, TrendingDown } from "lucide-react";
 import type { Market } from "@/types";
 
+import { usePredictionMarket } from "@/hooks/usePredictionMarket";
+
 interface TradeModalProps {
   market: Market;
   onClose: () => void;
@@ -26,6 +28,8 @@ export default function TradeModal({
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const { placeBet } = usePredictionMarket();
+
   const orderPrice = side === "yes" ? market.yesPrice : market.noPrice;
   const orderCost = Number(amount) * orderPrice || 0;
   const sharePrice =
@@ -38,7 +42,11 @@ export default function TradeModal({
     setIsLoading(true);
 
     try {
-      onTrade(market.id, side, Number(amount));
+      if (side === "yes") {
+        await placeBet(market.id, Number(amount), true);
+      } else {
+        await placeBet(market.id, Number(amount), false);
+      }
     } finally {
       setIsLoading(false);
     }
