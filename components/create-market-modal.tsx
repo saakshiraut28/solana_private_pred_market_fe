@@ -34,7 +34,7 @@ export default function CreateMarketModal({
 
   const handleCreateMarket = async () => {
     const question = title;
-    const liquidity = Number(initialLiquidity) || 10000;
+    const liquidity = Math.floor(Number(initialLiquidity) * 1e9) || 10000;
     const endTime = Date.now() + Number(daysToExpire) * 24 * 60 * 60 * 1000;
     await createMarket(question, new BN(liquidity), new BN(endTime));
   };
