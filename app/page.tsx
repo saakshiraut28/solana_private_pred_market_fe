@@ -6,11 +6,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import WalletConnect from "@/components/wallet-connect";
 import MarketList from "@/components/market-list";
 import CreateMarketModal from "@/components/create-market-modal";
 import TradeModal from "@/components/trade-modal";
 import type { Market } from "@/types";
+import {
+  WalletModalProvider,
+  WalletMultiButton,
+} from "@solana/wallet-adapter-react-ui";
 
 export default function Home() {
   const [connected, setConnected] = useState(false);
@@ -115,11 +118,7 @@ export default function Home() {
             </div>
             <h1 className="text-xl font-bold text-foreground">PredictMarket</h1>
           </div>
-          <WalletConnect
-            connected={connected}
-            publicKey={publicKey}
-            onConnect={handleWalletConnect}
-          />
+          <WalletMultiButton />
         </div>
       </header>
 
@@ -132,11 +131,7 @@ export default function Home() {
               <p className="text-muted-foreground mb-6">
                 Connect your Solana wallet to start predicting and trading
               </p>
-              <WalletConnect
-                connected={connected}
-                publicKey={publicKey}
-                onConnect={handleWalletConnect}
-              />
+              <WalletMultiButton />
             </Card>
           </div>
         ) : (
