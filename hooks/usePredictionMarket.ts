@@ -12,22 +12,41 @@ export function usePredictionMarket() {
     const createMarket = async (question: string, liquidityInSol: number, endTime: number) => {
         if (!wallet.publicKey) throw new Error("Wallet not connected");
 
+        if (isNaN(liquidityInSol) || liquidityInSol <= 0) {
+            throw new Error("Invalid liquidity amount");
+        }
+        if (isNaN(endTime) || endTime <= 0) {
+            throw new Error("Invalid end time");
+        }
+
         const liquidity = new BN(liquidityInSol * 1e9);
         const endTimeBn = new BN(endTime);
 
-        const marketKeypair = web3.Keypair.generate();
+        const [marketPda, marketBump] = PublicKey.findProgramAddressSync(
+            [Buffer.from("market"), wallet.publicKey.toBuffer(),],
+            program.programId
+        );
+
+        const [vaultPda, vaultBump] = PublicKey.findProgramAddressSync(
+            [Buffer.from("vault"), marketPda.toBuffer(),],
+            program.programId
+        )
+
+        console.log("creating market with PDA:", marketPda.toString());
+        console.log("vault PDA:", vaultPda.toBase58());
 
         const tx = await program.methods
             .createMarket(question, liquidity, endTimeBn)
             .accounts({
-                market: marketKeypair.publicKey,
+                market: marketPda,
+                vault: vaultPda,
                 creator: wallet.publicKey,
                 systemProgram: SystemProgram.programId,
             })
-            .signers([marketKeypair])
             .rpc();
 
-        return { tx, marketId: marketKeypair.publicKey.toString() };
+        return { tx, marketId: marketPda.toString() };
+
     };
 
     const placeBet = async (marketId: string, amountInSol: number, isYes: boolean) => {
@@ -36,7 +55,15 @@ export function usePredictionMarket() {
         const marketPubkey = new PublicKey(marketId);
         const amount = new BN(amountInSol * 1e9);
 
-        const [userPosition] = PublicKey.findProgramAddressSync(
+        const [vaultPda] = PublicKey.findProgramAddressSync(
+            [
+                Buffer.from("vault"),
+                marketPubkey.toBuffer(),
+            ],
+            program.programId
+        )
+
+        const [userPositionPda] = PublicKey.findProgramAddressSync(
             [
                 Buffer.from("user_position"),
                 marketPubkey.toBuffer(),
@@ -45,12 +72,15 @@ export function usePredictionMarket() {
             program.programId
         );
 
+        console.log("Placing bet on market:", marketPubkey.toString());
+        console.log("User position PDA:", userPositionPda.toString());
+
         const tx = await program.methods
             .placeBet(amount, isYes)
             .accounts({
                 market: marketPubkey,
                 user: wallet.publicKey,
-                userPosition: userPosition,
+                userPosition: userPositionPda,
                 systemProgram: SystemProgram.programId,
             })
             .rpc();
