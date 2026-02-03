@@ -1,6 +1,6 @@
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
-import { BN, web3 } from "@coral-xyz/anchor";
+import { BN } from "@coral-xyz/anchor";
 import { getProgram } from "@/lib/program";
 
 export function usePredictionMarket() {
@@ -46,8 +46,34 @@ export function usePredictionMarket() {
             .rpc();
 
         return { tx, marketId: marketPda.toString() };
-
     };
+
+    const getAllMarkets = async () => {
+        try {
+            const markets = await (program.account as any).market.all();
+
+            console.log(`Found ${markets.length} markets`);
+
+            return markets.map((market: any) => ({
+                id: market.publicKey.toString(),
+                title: market.account.question,
+                description: market.account.question, // or add a separate description field
+                yesPrice: market.account.currentYesProbability / 1_000_000, // Convert from millionths
+                noPrice: 1 - (market.account.currentYesProbability / 1_000_000),
+                totalVolume: market.account.totalLiquidity / 1e9, // Convert lamports to SOL
+                liquidity: market.account.liquidityParam / 1e9,
+                expiresAt: new Date(market.account.endTime * 1000), // Convert Unix timestamp to Date
+                creator: market.account.creator.toString(),
+                resolved: market.account.resolved,
+                outcome: market.account.outcome,
+                totalYesShares: market.account.totalYesShares,
+                totalNoShares: market.account.totalNoShares,
+            }));
+        } catch (error) {
+            console.error("Error fetching markets:", error);
+            return [];
+        }
+    }
 
     const placeBet = async (marketId: string, amountInSol: number, isYes: boolean) => {
         if (!wallet.publicKey) throw new Error("Wallet not connected");
@@ -88,5 +114,5 @@ export function usePredictionMarket() {
         return tx;
     };
 
-    return { createMarket, placeBet };
+    return { createMarket, getAllMarkets, placeBet };
 }

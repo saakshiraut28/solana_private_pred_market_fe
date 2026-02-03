@@ -12,63 +12,49 @@ import TradeModal from "@/components/trade-modal";
 import type { Market } from "@/types";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { usePredictionMarket } from "@/hooks/usePredictionMarket";
 
 export default function Home() {
   const { publicKey, connected } = useWallet();
+  const { getAllMarkets } = usePredictionMarket();
+
   const [markets, setMarkets] = useState<Market[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [showTradeModal, setShowTradeModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    setMarkets([
-      {
-        id: "1",
-        title: "Will BTC exceed $100k by Q2 2025?",
-        description: "Bitcoin price prediction",
-        yesPrice: 0.65,
-        noPrice: 0.35,
-        totalVolume: 150000,
-        liquidity: 25000,
-        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-        creator: "Creator1",
-      },
-      {
-        id: "2",
-        title: "Will SOL reach $50 by end of 2025?",
-        description: "Solana price prediction",
-        yesPrice: 0.58,
-        noPrice: 0.42,
-        totalVolume: 89000,
-        liquidity: 18000,
-        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-        creator: "Creator2",
-      },
-      {
-        id: "3",
-        title: "Will Ethereum 2.0 staking rewards exceed 5%?",
-        description: "ETH staking prediction",
-        yesPrice: 0.72,
-        noPrice: 0.28,
-        totalVolume: 210000,
-        liquidity: 42000,
-        expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
-        creator: "Creator3",
-      },
-    ]);
-  }, []);
+    if (connected) {
+      loadMarkets();
+    }
+  }, [connected]);
 
-  const handleCreateMarket = (newMarket: Omit<Market, "id">) => {
+  const loadMarkets = async () => {
+    setIsLoading(true);
+    try {
+      const fetchedMarkets = await getAllMarkets();
+      setMarkets(fetchedMarkets);
+      console.log("Markets loaded:");
+    } catch (error) {
+      console.error("Error loading markets:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateMarket = async (newMarket: Omit<Market, "id">) => {
     const marketWithId: Market = {
-      id: crypto.randomUUID(), // temp frontend id
+      id: crypto.randomUUID(),
       ...newMarket,
     };
 
     setMarkets((prev) => [marketWithId, ...prev]);
+    await loadMarkets();
     setShowCreateModal(false);
   };
 
-  const handleTrade = (
+  const handleTrade = async (
     marketId: string,
     side: "yes" | "no",
     amount: number,
@@ -93,6 +79,7 @@ export default function Home() {
       return m;
     });
     setMarkets(updatedMarkets);
+    await loadMarkets();
     setShowTradeModal(false);
   };
 
