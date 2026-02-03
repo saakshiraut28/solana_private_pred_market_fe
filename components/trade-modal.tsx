@@ -42,11 +42,14 @@ export default function TradeModal({
     setIsLoading(true);
 
     try {
-      if (side === "yes") {
-        await placeBet(market.id, Number(amount), true);
-      } else {
-        await placeBet(market.id, Number(amount), false);
-      }
+      const tx = await placeBet(market.id, Number(amount), side === "yes");
+      console.log("Transaction successful:", tx);
+
+      onTrade(market.id, side, Number(amount));
+      onClose();
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      alert("Transaction failed: " + (error as Error).message);
     } finally {
       setIsLoading(false);
     }
