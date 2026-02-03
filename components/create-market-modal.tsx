@@ -13,7 +13,6 @@ import type { Market } from "@/types";
 
 import { usePredictionMarket } from "@/hooks/usePredictionMarket";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { BN } from "@coral-xyz/anchor";
 
 interface CreateMarketModalProps {
   onClose: () => void;
@@ -32,12 +31,6 @@ export default function CreateMarketModal({
   const [isLoading, setIsLoading] = useState(false);
   const { createMarket } = usePredictionMarket();
 
-  const handleCreateMarket = async () => {
-    const question = title;
-    const liquidity = Math.floor(Number(initialLiquidity) * 1e9) || 10000;
-    const endTime = Date.now() + Number(daysToExpire) * 24 * 60 * 60 * 1000;
-    await createMarket(question, new BN(liquidity), new BN(endTime));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +43,11 @@ export default function CreateMarketModal({
     }
 
     try {
-      await handleCreateMarket();
+      await createMarket(
+        title,
+        Number(initialLiquidity) * 1e9,
+        Date.now() + Number(daysToExpire) * 24 * 60 * 60 * 1000,
+      );
 
       onCreate({
         title,
